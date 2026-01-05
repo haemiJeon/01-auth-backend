@@ -20,10 +20,8 @@ export class AppController {
   async signUp(@Body() body: { email: string; password: string }) {
     const { email, password } = body;
 
+    // 비밀번호 암호화 (보안 강도: 10)
     const hashedPassword = await bcrypt.hash(password, 10);
-
-    console.log(email);
-    console.log(hashedPassword);
 
     return {
       message: '회원가입 성공',
