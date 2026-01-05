@@ -2,12 +2,14 @@ import { Body, Controller, Get, Post } from '@nestjs/common';
 import { AppService } from './app.service';
 import { PrismaService } from './prisma/prisma.service';
 import bcrypt from 'bcrypt';
+import { JwtService } from '@nestjs/jwt';
 
 @Controller()
 export class AppController {
   constructor(
     private readonly appService: AppService,
     private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
   ) {}
 
   @Get()
@@ -24,21 +26,24 @@ export class AppController {
   async signUp(@Body() body: { email: string; password: string }) {
     const { email, password } = body;
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // TODO: 이미 존재하는 이메일이면 에러
-
-    const user = await this.prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-      },
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email },
     });
 
-    return {
-      message: '회원가입 성공',
-      user,
-    };
+    if (existingUser) {
+      return {
+        statusCode: 400,
+        message: '이미 존재하는 이메일입니다.',
+        error: 'Bad Request',
+      };
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await this.prisma.user.create({
+      data: { email, password: hashedPassword },
+    });
+
+    return { message: '회원가입 성공', user };
   }
 
   @Post('login')
@@ -46,9 +51,7 @@ export class AppController {
     const { email, password } = body;
 
     const user = await this.prisma.user.findUnique({
-      where: {
-        email,
-      },
+      where: { email },
     });
 
     if (!user) {
@@ -61,9 +64,12 @@ export class AppController {
       return { message: '비밀번호가 일치하지 않습니다.' };
     }
 
+    const payload = { sub: user.id, email: user.email };
+    const token = await this.jwtService.signAsync(payload);
+
     return {
       message: '로그인 성공',
-      user: { id: user.id, email: user.email },
+      access_token: token,
     };
   }
 }
