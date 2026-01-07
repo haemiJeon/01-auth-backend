@@ -1,5 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
-import { AppService } from './app.service';
+import { Body, Controller, Post } from '@nestjs/common';
 import { PrismaService } from './prisma/prisma.service';
 import bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
@@ -7,20 +6,9 @@ import { JwtService } from '@nestjs/jwt';
 @Controller()
 export class AppController {
   constructor(
-    private readonly appService: AppService,
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
   ) {}
-
-  @Get()
-  getHello(): string {
-    return this.appService.getHello();
-  }
-
-  @Get('hello')
-  getHelloMsg(): string {
-    return '안녕하세요!';
-  }
 
   @Post('signup')
   async signUp(@Body() body: { email: string; password: string }) {
