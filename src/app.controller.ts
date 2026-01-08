@@ -7,6 +7,7 @@ import {
   UseGuards,
   NotFoundException,
   Patch,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from './prisma/prisma.service';
 import bcrypt from 'bcrypt';
@@ -119,7 +120,7 @@ export class AppController {
     const isMatch = await bcrypt.compare(currentPassword, user.password);
 
     if (!isMatch) {
-      return { statusCode: 400, message: '현재 비밀번호가 일치하지 않습니다.' };
+      throw new BadRequestException('현재 비밀번호가 일치하지 않습니다.');
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
