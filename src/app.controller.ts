@@ -123,6 +123,12 @@ export class AppController {
       throw new BadRequestException('현재 비밀번호가 일치하지 않습니다.');
     }
 
+    if (currentPassword === newPassword) {
+      throw new BadRequestException(
+        '새로운 비밀번호가 현재 비밀번호와 같습니다.',
+      );
+    }
+
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     await this.prisma.user.update({
       where: { id: userId },
