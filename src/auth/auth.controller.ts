@@ -10,6 +10,7 @@ import {
 import { AuthService } from './auth.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { LoginDto } from './dto/login.dto';
+import { CheckEmailDto } from './dto/check-email.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { RequestWithUser } from './interfaces/request-with-user.interface';
 import { ChangePasswordDto } from './dto/change-password.dto';
@@ -17,6 +18,11 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
+  @Post('check-email')
+  async checkEmail(@Body() body: CheckEmailDto) {
+    return this.authService.checkEmail(body.email);
+  }
 
   @Post('signup')
   async signUp(@Body() body: CreateUserDto) {

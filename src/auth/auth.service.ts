@@ -18,6 +18,13 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
+  async checkEmail(email: string) {
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email },
+    });
+    return { exists: !!existingUser };
+  }
+
   async signUp(createUserDto: CreateUserDto) {
     const { email, password } = createUserDto;
 
