@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Patch,
   Post,
@@ -53,5 +54,14 @@ export class AuthController {
     @Body() body: ChangePasswordDto,
   ) {
     return this.authService.changePassword(req.user.userId, body);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Delete('withdraw')
+  async withdraw(
+    @Request() req: RequestWithUser,
+    @Body() body: { password: string },
+  ) {
+    return this.authService.withdraw(req.user.userId, body.password);
   }
 }

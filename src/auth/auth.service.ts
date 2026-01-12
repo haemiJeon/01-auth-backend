@@ -143,4 +143,27 @@ export class AuthService {
 
     return { message: '비밀번호가 성공적으로 변경되었습니다.' };
   }
+
+  async withdraw(userId: string, password: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) throw new NotFoundException('사용자를 찾을 수 없습니다.');
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch)
+      throw new UnauthorizedException(
+        '비밀번호가 일치하지 않아 탈퇴할 수 없습니다.',
+      );
+
+    await this.prisma.user.delete({
+      where: { id: userId },
+    });
+
+    return {
+      message:
+        '탈퇴가 성공적으로 완료되었습니다. 그동안 이용해 주셔서 감사합니다.',
+    };
+  }
 }
