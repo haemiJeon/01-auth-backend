@@ -7,6 +7,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { randomBytes } from 'crypto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { LoginDto } from './dto/login.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
@@ -41,7 +42,36 @@ export class AuthService {
       data: { email, password: hashedPassword },
     });
 
-    return { message: '회원가입 성공', user };
+    return {
+      message: '회원가입 성공',
+      user: { email: user.email, id: user.id },
+    };
+  }
+
+  async forgotPassword(email: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) throw new NotFoundException('사용자를 찾을 수 없습니다.');
+
+    const tempPassword = randomBytes(4).toString('hex');
+    const hashedTempPassword = await bcrypt.hash(tempPassword, 10);
+
+    await this.prisma.user.update({
+      where: { email },
+      data: {
+        password: hashedTempPassword,
+        isTemporary: true,
+      },
+    });
+
+    // 실제 서비스에서는 여기서 이메일을 발송해야 합니다.
+    console.log(
+      `[Email 전송 시뮬레이션] 수신자: ${email}, 임시 비밀번호: ${tempPassword}`,
+    );
+
+    return {
+      message:
+        '임시 비밀번호가 이메일로 전송되었습니다. 확인 후 로그인해주세요.',
+    };
   }
 
   async login(loginDto: LoginDto) {
@@ -56,7 +86,6 @@ export class AuthService {
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
-
     if (!isMatch) {
       throw new UnauthorizedException('비밀번호가 일치하지 않습니다.');
     }
@@ -67,6 +96,7 @@ export class AuthService {
     return {
       message: '로그인 성공',
       access_token: token,
+      mustChangePassword: user.isTemporary,
     };
   }
 
@@ -108,7 +138,7 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     await this.prisma.user.update({
       where: { id: userId },
-      data: { password: hashedPassword },
+      data: { password: hashedPassword, isTemporary: false },
     });
 
     return { message: '비밀번호가 성공적으로 변경되었습니다.' };

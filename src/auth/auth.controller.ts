@@ -29,6 +29,12 @@ export class AuthController {
     return this.authService.signUp(body);
   }
 
+  @Post('forgot-password')
+  async forgotPassword(@Body() body: { email: string }) {
+    const tempPassword = await this.authService.forgotPassword(body.email);
+    return tempPassword;
+  }
+
   @Post('login')
   async login(@Body() body: LoginDto) {
     return this.authService.login(body);
