@@ -77,8 +77,11 @@ export class AuthService {
   async login(loginDto: LoginDto) {
     const { email, password } = loginDto;
 
-    const user = await this.prisma.user.findUnique({
-      where: { email },
+    const user = await this.prisma.user.findFirst({
+      where: {
+        email: email,
+        deletedAt: null,
+      },
     });
 
     if (!user) {
@@ -149,7 +152,8 @@ export class AuthService {
       where: { id: userId },
     });
 
-    if (!user) throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    if (!user || user.deletedAt)
+      throw new NotFoundException('사용자를 찾을 수 없습니다.');
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch)
@@ -157,8 +161,9 @@ export class AuthService {
         '비밀번호가 일치하지 않아 탈퇴할 수 없습니다.',
       );
 
-    await this.prisma.user.delete({
+    await this.prisma.user.update({
       where: { id: userId },
+      data: { deletedAt: new Date() },
     });
 
     return {

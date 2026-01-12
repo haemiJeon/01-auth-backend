@@ -17,4 +17,5 @@ model User {
   email         String    @unique
   password      String
   isTemporary   Boolean   @default(false)
+  deletedAt     DateTime?
 }
