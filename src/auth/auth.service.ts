@@ -157,18 +157,27 @@ export class AuthService {
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch)
-      throw new UnauthorizedException(
-        '비밀번호가 일치하지 않아 탈퇴할 수 없습니다.',
-      );
+      throw new UnauthorizedException('비밀번호가 일치하지 않습니다.');
 
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { deletedAt: new Date() },
+    return await this.prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          email: `deleted_${userId}_${user.email}`,
+          password: 'PROTECTED_DATA',
+          deletedAt: new Date(),
+        },
+      });
+
+      await tx.payment.updateMany({
+        where: { userId },
+        data: { isArchived: true },
+      });
+
+      return {
+        message:
+          '탈퇴 처리가 완료되었습니다. 관련 법령에 따라 결제 정보는 5년간 보관됩니다.',
+      };
     });
-
-    return {
-      message:
-        '탈퇴가 성공적으로 완료되었습니다. 그동안 이용해 주셔서 감사합니다.',
-    };
   }
 }
