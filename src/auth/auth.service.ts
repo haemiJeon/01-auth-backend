@@ -8,6 +8,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
+import { User } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user.dto';
 import { LoginDto } from './dto/login.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
@@ -77,7 +78,7 @@ export class AuthService {
   async login(loginDto: LoginDto) {
     const { email, password } = loginDto;
 
-    const user = await this.prisma.user.findFirst({
+    const user: User | null = await this.prisma.user.findFirst({
       where: {
         email: email,
         deletedAt: null,
@@ -93,7 +94,7 @@ export class AuthService {
       throw new UnauthorizedException('비밀번호가 일치하지 않습니다.');
     }
 
-    const payload = { sub: user.id, email: user.email };
+    const payload = { sub: user.id, email: user.email, role: user.role };
     const token = await this.jwtService.signAsync(payload);
 
     return {
@@ -117,6 +118,7 @@ export class AuthService {
       user: {
         email: user.email,
         id: user.id,
+        role: user.role,
       },
     };
   }
@@ -178,6 +180,17 @@ export class AuthService {
         message:
           '탈퇴 처리가 완료되었습니다. 관련 법령에 따라 결제 정보는 5년간 보관됩니다.',
       };
+    });
+  }
+
+  async getArchivedData() {
+    return await this.prisma.payment.findMany({
+      where: { isArchived: true },
+      include: {
+        user: {
+          select: { email: true, deletedAt: true }, // 비식별화된 유저 정보 포함
+        },
+      },
     });
   }
 }
