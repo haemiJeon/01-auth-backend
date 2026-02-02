@@ -17,7 +17,7 @@ async function bootstrap() {
     // 운영 환경(production)이면 특정 도메인만 허용, 개발 환경이면 모두 허용(true)
     origin:
       process.env.NODE_ENV === 'production'
-        ? ['https://a.com', 'https://b.com']
+        ? ['https://01-auth-frontend.vercel.app/login']
         : true,
     credentials: true, // 쿠키/인증 헤더 전달 허용
   });
