@@ -1,0 +1,40 @@
+// This is your Prisma schema file for PRODUCTION,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// prisma/schema.prisma
+
+enum Role {
+  USER
+  ADMIN
+  SUPER_ADMIN // 법적 데이터 접근 권한자
+}
+
+model User {
+  id          String    @id @default(uuid())
+  email       String    @unique
+  password    String
+  role        Role      @default(USER)
+  isTemporary Boolean   @default(false)
+  deletedAt   DateTime?
+  payments    Payment[]
+}
+
+model Payment {
+  id          String   @id @default(uuid())
+  amount      Float
+  productName String   @default("Unknown")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+  isArchived  Boolean  @default(false)
+}
